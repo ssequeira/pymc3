@@ -25,7 +25,7 @@ fi
 
 pip install jupyter
 conda install --yes pyqt matplotlib --channel conda-forge
-conda install --yes pyzmq numpy scipy nose pandas Cython patsy statsmodels joblib coverage mkl-service
+conda install --yes pyzmq numpy=1.11.0 scipy nose pandas Cython patsy statsmodels joblib coverage mkl-service
 if [ ${PYTHON_VERSION} == "2.7" ]; then
     conda install --yes mock enum34;
 fi
