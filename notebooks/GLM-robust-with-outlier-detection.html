@@ -451,7 +451,6 @@ $&gt; pip install --process-dependency-links git+https://github.com/pymc-devs/py
 </div>
 <div class="input_area highlight-ipython3"><div class="highlight"><pre>
 <span></span><span class="o">%</span><span class="k">matplotlib</span> inline
-<span class="o">%</span><span class="k">qtconsole</span> --colors=linux
 
 <span class="kn">import</span> <span class="nn">warnings</span>
 <span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s1">&#39;ignore&#39;</span><span class="p">)</span>
@@ -572,6 +571,8 @@ line</li>
 <div class="line"><span class="math">\(\sigma\)</span> = the measured error in <span class="math">\(y\)</span> in the dataset
 <code class="docutils literal"><span class="pre">sigma_y</span></code></div>
 </div>
+<div class="section" id="Define-model">
+<h3>Define model<a class="headerlink" href="#Define-model" title="Permalink to this headline">¶</a></h3>
 <p><strong>NOTE:</strong> + We&#8217;re using a simple linear OLS model with Normally
 distributed priors so that it behaves like a ridge regression</p>
 <div class="nbinput nblast docutils container">
@@ -599,6 +600,9 @@ distributed priors so that it behaves like a ridge regression</p>
 </pre></div>
 </div>
 </div>
+</div>
+<div class="section" id="Sample">
+<h3>Sample<a class="headerlink" href="#Sample" title="Permalink to this headline">¶</a></h3>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none"><div class="highlight"><pre>
 <span></span>In [5]:
@@ -606,27 +610,27 @@ distributed priors so that it behaves like a ridge regression</p>
 </div>
 <div class="input_area highlight-ipython3"><div class="highlight"><pre>
 <span></span><span class="k">with</span> <span class="n">mdl_ols</span><span class="p">:</span>
-
-    <span class="c1">## find MAP using Powell, seems to be more robust</span>
-    <span class="n">start_MAP</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">find_MAP</span><span class="p">(</span><span class="n">fmin</span><span class="o">=</span><span class="n">optimize</span><span class="o">.</span><span class="n">fmin_powell</span><span class="p">,</span> <span class="n">disp</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
-
     <span class="c1">## take samples</span>
-    <span class="n">traces_ols</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">2000</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="n">start_MAP</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="n">pm</span><span class="o">.</span><span class="n">NUTS</span><span class="p">(),</span> <span class="n">progressbar</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">traces_ols</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">2000</span><span class="p">,</span> <span class="n">tune</span><span class="o">=</span><span class="mi">1000</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
 </div>
-<div class="output_area docutils container">
+<div class="stderr output_area docutils container">
 <div class="highlight"><pre>
-Optimization terminated successfully.
-         Current function value: 145.777745
-         Iterations: 3
-         Function evaluations: 118
- [-----------------100%-----------------] 2000 of 2000 complete in 0.9 sec
+Auto-assigning NUTS sampler...
+Initializing NUTS using ADVI...
+Average Loss = 150.2:   7%|▋         | 13728/200000 [00:01&lt;00:21, 8696.31it/s]
+Convergence archived at 14000
+Interrupted at 14,000 [7%]: Average Loss = 178.18
+100%|██████████| 2000/2000 [00:01&lt;00:00, 1172.69it/s]
 </pre></div></div>
 </div>
+</div>
+<div class="section" id="View-Traces">
+<h3>View Traces<a class="headerlink" href="#View-Traces" title="Permalink to this headline">¶</a></h3>
 <p><strong>NOTE</strong>: I&#8217;ll &#8216;burn&#8217; the traces to only retain the final 1000 samples</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none"><div class="highlight"><pre>
@@ -650,6 +654,7 @@ Optimization terminated successfully.
 the final plot</p>
 <hr class="docutils" />
 </div>
+</div>
 <hr class="docutils" />
 <div class="section" id="Create-Robust-Model:-Student-T-Method">
 <h2>Create Robust Model: Student-T Method<a class="headerlink" href="#Create-Robust-Model:-Student-T-Method" title="Permalink to this headline">¶</a></h2>
@@ -665,9 +670,11 @@ Vs Noise model below, so a comparison seems worthwhile.</p>
 <p><strong>Note:</strong> we&#8217;ll constrain the Student-T &#8216;degrees of freedom&#8217; parameter
 <code class="docutils literal"><span class="pre">nu</span></code> to be an integer, but otherwise leave it as just another
 stochastic to be inferred: no need for prior knowledge.</p>
+<div class="section" id="Define-Model">
+<h3>Define Model<a class="headerlink" href="#Define-Model" title="Permalink to this headline">¶</a></h3>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none"><div class="highlight"><pre>
-<span></span>In [7]:
+<span></span>In [9]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3"><div class="highlight"><pre>
@@ -685,56 +692,53 @@ stochastic to be inferred: no need for prior knowledge.</p>
                             <span class="n">dtype</span><span class="o">=</span><span class="n">thno</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">floatX</span><span class="p">),</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;sigma_y&#39;</span><span class="p">)</span>
 
     <span class="c1">## define prior for Student T degrees of freedom</span>
-    <span class="n">nu</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">DiscreteUniform</span><span class="p">(</span><span class="s1">&#39;nu&#39;</span><span class="p">,</span> <span class="n">lower</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">upper</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+    <span class="n">nu</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">Uniform</span><span class="p">(</span><span class="s1">&#39;nu&#39;</span><span class="p">,</span> <span class="n">lower</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">upper</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
 
     <span class="c1">## Define Student T likelihood</span>
-    <span class="n">likelihood</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">StudentT</span><span class="p">(</span><span class="s1">&#39;likelihood&#39;</span><span class="p">,</span> <span class="n">mu</span><span class="o">=</span><span class="n">yest</span><span class="p">,</span> <span class="n">sd</span><span class="o">=</span><span class="n">sigma_y</span><span class="p">,</span> <span class="n">nu</span><span class="o">=</span><span class="n">nu</span>
-                           <span class="p">,</span><span class="n">observed</span><span class="o">=</span><span class="n">dfhoggs</span><span class="p">[</span><span class="s1">&#39;y&#39;</span><span class="p">])</span>
+    <span class="n">likelihood</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">StudentT</span><span class="p">(</span><span class="s1">&#39;likelihood&#39;</span><span class="p">,</span> <span class="n">mu</span><span class="o">=</span><span class="n">yest</span><span class="p">,</span> <span class="n">sd</span><span class="o">=</span><span class="n">sigma_y</span><span class="p">,</span> <span class="n">nu</span><span class="o">=</span><span class="n">nu</span><span class="p">,</span>
+                             <span class="n">observed</span><span class="o">=</span><span class="n">dfhoggs</span><span class="p">[</span><span class="s1">&#39;y&#39;</span><span class="p">])</span>
 
 </pre></div>
 </div>
 </div>
+</div>
+<div class="section" id="Sample">
+<h3>Sample<a class="headerlink" href="#Sample" title="Permalink to this headline">¶</a></h3>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none"><div class="highlight"><pre>
-<span></span>In [8]:
+<span></span>In [10]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3"><div class="highlight"><pre>
 <span></span><span class="k">with</span> <span class="n">mdl_studentt</span><span class="p">:</span>
-
-    <span class="c1">## find MAP using Powell, seems to be more robust</span>
-    <span class="n">start_MAP</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">find_MAP</span><span class="p">(</span><span class="n">fmin</span><span class="o">=</span><span class="n">optimize</span><span class="o">.</span><span class="n">fmin_powell</span><span class="p">,</span> <span class="n">disp</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
-
-    <span class="c1">## two-step sampling to allow Metropolis for nu (which is discrete)</span>
-    <span class="n">step1</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">NUTS</span><span class="p">([</span><span class="n">b0</span><span class="p">,</span> <span class="n">b1</span><span class="p">])</span>
-    <span class="n">step2</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">Metropolis</span><span class="p">([</span><span class="n">nu</span><span class="p">])</span>
-
     <span class="c1">## take samples</span>
-    <span class="n">traces_studentt</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">2000</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="n">start_MAP</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="p">[</span><span class="n">step1</span><span class="p">,</span> <span class="n">step2</span><span class="p">],</span> <span class="n">progressbar</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">traces_studentt</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">2000</span><span class="p">,</span> <span class="n">tune</span><span class="o">=</span><span class="mi">1000</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
 </div>
-<div class="output_area docutils container">
+<div class="stderr output_area docutils container">
 <div class="highlight"><pre>
-Optimization terminated successfully.
-         Current function value: 107.488021
-         Iterations: 3
-         Function evaluations: 77
- [-----------------100%-----------------] 2000 of 2000 complete in 1.0 sec
+Auto-assigning NUTS sampler...
+Initializing NUTS using ADVI...
+Average Loss = 40.378: 100%|██████████| 200000/200000 [00:21&lt;00:00, 9492.83it/s]
+Finished [100%]: Average Loss = 40.375
+100%|██████████| 2000/2000 [00:01&lt;00:00, 1036.71it/s]
 </pre></div></div>
 </div>
+<div class="section" id="View-Traces">
+<h4>View Traces<a class="headerlink" href="#View-Traces" title="Permalink to this headline">¶</a></h4>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none"><div class="highlight"><pre>
-<span></span>In [9]:
+<span></span>In [11]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3"><div class="highlight"><pre>
-<span></span><span class="n">_</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">traceplot</span><span class="p">(</span><span class="n">traces_studentt</span><span class="p">[</span><span class="o">-</span><span class="mi">1000</span><span class="p">:]</span>
-            <span class="p">,</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">traces_studentt</span><span class="o">.</span><span class="n">varnames</span><span class="p">)</span><span class="o">*</span><span class="mf">1.5</span><span class="p">)</span>
-            <span class="p">,</span><span class="n">lines</span><span class="o">=</span><span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span><span class="p">[</span><span class="s1">&#39;mean&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">pm</span><span class="o">.</span><span class="n">df_summary</span><span class="p">(</span><span class="n">traces_studentt</span><span class="p">[</span><span class="o">-</span><span class="mi">1000</span><span class="p">:])</span><span class="o">.</span><span class="n">iterrows</span><span class="p">()})</span>
+<span></span><span class="n">_</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">traceplot</span><span class="p">(</span><span class="n">traces_studentt</span><span class="p">[</span><span class="o">-</span><span class="mi">1000</span><span class="p">:],</span>
+                 <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">traces_studentt</span><span class="o">.</span><span class="n">varnames</span><span class="p">)</span><span class="o">*</span><span class="mf">1.5</span><span class="p">)</span>
+                 <span class="n">lines</span><span class="o">=</span><span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span><span class="p">[</span><span class="s1">&#39;mean&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">pm</span><span class="o">.</span><span class="n">df_summary</span><span class="p">(</span><span class="n">traces_studentt</span><span class="p">[</span><span class="o">-</span><span class="mi">1000</span><span class="p">:])</span><span class="o">.</span><span class="n">iterrows</span><span class="p">()})</span>
 </pre></div>
 </div>
 </div>
@@ -760,6 +764,8 @@ the conventional OLS</li>
 datapoints in the final plot</p>
 <hr class="docutils" />
 </div>
+</div>
+</div>
 <hr class="docutils" />
 <div class="section" id="Create-Robust-Model-with-Outliers:-Hogg-Method">
 <h2>Create Robust Model with Outliers: Hogg Method<a class="headerlink" href="#Create-Robust-Model-with-Outliers:-Hogg-Method" title="Permalink to this headline">¶</a></h2>
@@ -780,9 +786,11 @@ inlier / outlier flags:</p>
 <div class="line"><span class="math">\(\bf{B}\)</span> is Bernoulli-distibuted
 <span class="math">\(B_{i} \in [0_{(inlier)},1_{(outlier)}]\)</span></div>
 </div>
+<div class="section" id="Define-model">
+<h3>Define model<a class="headerlink" href="#Define-model" title="Permalink to this headline">¶</a></h3>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none"><div class="highlight"><pre>
-<span></span>In [10]:
+<span></span>In [12]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3"><div class="highlight"><pre>
@@ -806,87 +814,107 @@ inlier / outlier flags:</p>
     <span class="n">logL_out</span> <span class="o">=</span> <span class="n">T</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">T</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">pdfs_out</span><span class="p">)</span> <span class="o">*</span> <span class="n">is_outlier</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">logL_in</span> <span class="o">+</span> <span class="n">logL_out</span>
-
 </pre></div>
 </div>
 </div>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none"><div class="highlight"><pre>
-<span></span>In [11]:
+<span></span>In [57]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3"><div class="highlight"><pre>
 <span></span><span class="k">with</span> <span class="n">pm</span><span class="o">.</span><span class="n">Model</span><span class="p">()</span> <span class="k">as</span> <span class="n">mdl_signoise</span><span class="p">:</span>
 
     <span class="c1">## Define weakly informative Normal priors to give Ridge regression</span>
-    <span class="n">b0</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="s1">&#39;b0_intercept&#39;</span><span class="p">,</span> <span class="n">mu</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">sd</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
-    <span class="n">b1</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="s1">&#39;b1_slope&#39;</span><span class="p">,</span> <span class="n">mu</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">sd</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+    <span class="n">b0</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="s1">&#39;b0_intercept&#39;</span><span class="p">,</span> <span class="n">mu</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">sd</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">testval</span><span class="o">=</span><span class="n">pm</span><span class="o">.</span><span class="n">floatX</span><span class="p">(</span><span class="mf">0.1</span><span class="p">))</span>
+    <span class="n">b1</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="s1">&#39;b1_slope&#39;</span><span class="p">,</span> <span class="n">mu</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">sd</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">testval</span><span class="o">=</span><span class="n">pm</span><span class="o">.</span><span class="n">floatX</span><span class="p">(</span><span class="mf">1.</span><span class="p">))</span>
 
     <span class="c1">## Define linear model</span>
     <span class="n">yest_in</span> <span class="o">=</span> <span class="n">b0</span> <span class="o">+</span> <span class="n">b1</span> <span class="o">*</span> <span class="n">dfhoggs</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">]</span>
 
     <span class="c1">## Define weakly informative priors for the mean and variance of outliers</span>
-    <span class="n">yest_out</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="s1">&#39;yest_out&#39;</span><span class="p">,</span> <span class="n">mu</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">sd</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
-    <span class="n">sigma_y_out</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">HalfNormal</span><span class="p">(</span><span class="s1">&#39;sigma_y_out&#39;</span><span class="p">,</span> <span class="n">sd</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+    <span class="n">yest_out</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="s1">&#39;yest_out&#39;</span><span class="p">,</span> <span class="n">mu</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">sd</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">testval</span><span class="o">=</span><span class="n">pm</span><span class="o">.</span><span class="n">floatX</span><span class="p">(</span><span class="mf">1.</span><span class="p">))</span>
+    <span class="n">sigma_y_out</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">HalfNormal</span><span class="p">(</span><span class="s1">&#39;sigma_y_out&#39;</span><span class="p">,</span> <span class="n">sd</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">testval</span><span class="o">=</span><span class="n">pm</span><span class="o">.</span><span class="n">floatX</span><span class="p">(</span><span class="mf">1.</span><span class="p">))</span>
 
     <span class="c1">## Define Bernoulli inlier / outlier flags according to a hyperprior</span>
     <span class="c1">## fraction of outliers, itself constrained to [0,.5] for symmetry</span>
     <span class="n">frac_outliers</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">Uniform</span><span class="p">(</span><span class="s1">&#39;frac_outliers&#39;</span><span class="p">,</span> <span class="n">lower</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">upper</span><span class="o">=.</span><span class="mi">5</span><span class="p">)</span>
-    <span class="n">is_outlier</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">Bernoulli</span><span class="p">(</span><span class="s1">&#39;is_outlier&#39;</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="n">frac_outliers</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="n">dfhoggs</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">is_outlier</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">Bernoulli</span><span class="p">(</span><span class="s1">&#39;is_outlier&#39;</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="n">frac_outliers</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="n">dfhoggs</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                              <span class="n">testval</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">dfhoggs</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">&lt;</span> <span class="mf">0.2</span><span class="p">)</span>
 
     <span class="c1">## Extract observed y and sigma_y from dataset, encode as theano objects</span>
     <span class="n">yobs</span> <span class="o">=</span> <span class="n">thno</span><span class="o">.</span><span class="n">shared</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">dfhoggs</span><span class="p">[</span><span class="s1">&#39;y&#39;</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">thno</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">floatX</span><span class="p">),</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;yobs&#39;</span><span class="p">)</span>
-    <span class="n">sigma_y_in</span> <span class="o">=</span> <span class="n">thno</span><span class="o">.</span><span class="n">shared</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">dfhoggs</span><span class="p">[</span><span class="s1">&#39;sigma_y&#39;</span><span class="p">]</span>
-                                <span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">thno</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">floatX</span><span class="p">),</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;sigma_y_in&#39;</span><span class="p">)</span>
+    <span class="n">sigma_y_in</span> <span class="o">=</span> <span class="n">thno</span><span class="o">.</span><span class="n">shared</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">dfhoggs</span><span class="p">[</span><span class="s1">&#39;sigma_y&#39;</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">thno</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">floatX</span><span class="p">),</span>
+                             <span class="n">name</span><span class="o">=</span><span class="s1">&#39;sigma_y_in&#39;</span><span class="p">)</span>
 
     <span class="c1">## Use custom likelihood using DensityDist</span>
     <span class="n">likelihood</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">DensityDist</span><span class="p">(</span><span class="s1">&#39;likelihood&#39;</span><span class="p">,</span> <span class="n">logp_signoise</span><span class="p">,</span>
-                        <span class="n">observed</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;yobs&#39;</span><span class="p">:</span><span class="n">yobs</span><span class="p">,</span> <span class="s1">&#39;is_outlier&#39;</span><span class="p">:</span><span class="n">is_outlier</span><span class="p">,</span>
-                                  <span class="s1">&#39;yest_in&#39;</span><span class="p">:</span><span class="n">yest_in</span><span class="p">,</span> <span class="s1">&#39;sigma_y_in&#39;</span><span class="p">:</span><span class="n">sigma_y_in</span><span class="p">,</span>
-                                  <span class="s1">&#39;yest_out&#39;</span><span class="p">:</span><span class="n">yest_out</span><span class="p">,</span> <span class="s1">&#39;sigma_y_out&#39;</span><span class="p">:</span><span class="n">sigma_y_out</span><span class="p">})</span>
-
+                        <span class="n">observed</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;yobs&#39;</span><span class="p">:</span> <span class="n">yobs</span><span class="p">,</span> <span class="s1">&#39;is_outlier&#39;</span><span class="p">:</span> <span class="n">is_outlier</span><span class="p">,</span>
+                                  <span class="s1">&#39;yest_in&#39;</span><span class="p">:</span> <span class="n">yest_in</span><span class="p">,</span> <span class="s1">&#39;sigma_y_in&#39;</span><span class="p">:</span> <span class="n">sigma_y_in</span><span class="p">,</span>
+                                  <span class="s1">&#39;yest_out&#39;</span><span class="p">:</span> <span class="n">yest_out</span><span class="p">,</span> <span class="s1">&#39;sigma_y_out&#39;</span><span class="p">:</span> <span class="n">sigma_y_out</span><span class="p">})</span>
 </pre></div>
 </div>
 </div>
+</div>
+<div class="section" id="Sample">
+<h3>Sample<a class="headerlink" href="#Sample" title="Permalink to this headline">¶</a></h3>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none"><div class="highlight"><pre>
-<span></span>In [17]:
+<span></span>In [58]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3"><div class="highlight"><pre>
 <span></span><span class="k">with</span> <span class="n">mdl_signoise</span><span class="p">:</span>
-
     <span class="c1">## two-step sampling to create Bernoulli inlier/outlier flags</span>
-    <span class="n">step1</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">NUTS</span><span class="p">([</span><span class="n">frac_outliers</span><span class="p">,</span> <span class="n">yest_out</span><span class="p">,</span> <span class="n">sigma_y_out</span><span class="p">,</span> <span class="n">b0</span><span class="p">,</span> <span class="n">b1</span><span class="p">])</span>
-    <span class="n">step2</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">BinaryMetropolis</span><span class="p">([</span><span class="n">is_outlier</span><span class="p">],</span> <span class="n">tune_interval</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
-
-    <span class="c1">## find MAP using Powell, seems to be more robust</span>
-    <span class="n">start_MAP</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">find_MAP</span><span class="p">(</span><span class="n">fmin</span><span class="o">=</span><span class="n">optimize</span><span class="o">.</span><span class="n">fmin_powell</span><span class="p">,</span> <span class="n">disp</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">step1</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">Metropolis</span><span class="p">([</span><span class="n">frac_outliers</span><span class="p">,</span> <span class="n">yest_out</span><span class="p">,</span> <span class="n">sigma_y_out</span><span class="p">,</span> <span class="n">b0</span><span class="p">,</span> <span class="n">b1</span><span class="p">])</span>
+    <span class="n">step2</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">step_methods</span><span class="o">.</span><span class="n">BinaryGibbsMetropolis</span><span class="p">([</span><span class="n">is_outlier</span><span class="p">])</span>
 
     <span class="c1">## take samples</span>
-    <span class="n">traces_signoise</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">2000</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="n">start_MAP</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="p">[</span><span class="n">step1</span><span class="p">,</span><span class="n">step2</span><span class="p">],</span> <span class="n">progressbar</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">traces_signoise</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">20000</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="p">[</span><span class="n">step1</span><span class="p">,</span> <span class="n">step2</span><span class="p">],</span> <span class="n">tune</span><span class="o">=</span><span class="mi">10000</span><span class="p">,</span> <span class="n">progressbar</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
 </div>
-<div class="output_area docutils container">
+<div class="stderr output_area docutils container">
 <div class="highlight"><pre>
-Optimization terminated successfully.
-         Current function value: 155.449990
-         Iterations: 3
-         Function evaluations: 213
- [-----------------100%-----------------] 2000 of 2000 complete in 169.1 sec
+100%|██████████| 20000/20000 [00:54&lt;00:00, 367.64it/s]
 </pre></div></div>
 </div>
+</div>
+<div class="section" id="View-Traces">
+<h3>View Traces<a class="headerlink" href="#View-Traces" title="Permalink to this headline">¶</a></h3>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none"><div class="highlight"><pre>
-<span></span>In [18]:
+<span></span>In [59]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3"><div class="highlight"><pre>
-<span></span><span class="n">_</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">traceplot</span><span class="p">(</span><span class="n">traces_signoise</span><span class="p">[</span><span class="o">-</span><span class="mi">1000</span><span class="p">:],</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">traces_signoise</span><span class="o">.</span><span class="n">varnames</span><span class="p">)</span><span class="o">*</span><span class="mf">1.5</span><span class="p">),</span>
+<span></span><span class="n">traces_signoise</span><span class="p">[</span><span class="o">-</span><span class="mi">10000</span><span class="p">:][</span><span class="s1">&#39;b0_intercept&#39;</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none"><div class="highlight"><pre>
+<span></span>Out[59]:
+</pre></div>
+</div>
+<div class="output_area highlight-none"><div class="highlight"><pre>
+<span></span>array([ 0.1,  0.1,  0.1, ...,  0.1,  0.1,  0.1], dtype=float32)
+</pre></div>
+</div>
+</div>
+<p><strong>TODO</strong> Fix sampling, not sure why this stopped working, I tried to fix
+it with supplying better test values but sampling of the intercepts just
+fails. (Thomas)</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none"><div class="highlight"><pre>
+<span></span>In [60]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3"><div class="highlight"><pre>
+<span></span><span class="n">_</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">traceplot</span><span class="p">(</span><span class="n">traces_signoise</span><span class="p">[</span><span class="o">-</span><span class="mi">10000</span><span class="p">:],</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">traces_signoise</span><span class="o">.</span><span class="n">varnames</span><span class="p">)</span><span class="o">*</span><span class="mf">1.5</span><span class="p">),</span>
             <span class="n">lines</span><span class="o">=</span><span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span><span class="p">[</span><span class="s1">&#39;mean&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">pm</span><span class="o">.</span><span class="n">df_summary</span><span class="p">(</span><span class="n">traces_signoise</span><span class="p">[</span><span class="o">-</span><span class="mi">1000</span><span class="p">:])</span><span class="o">.</span><span class="n">iterrows</span><span class="p">()})</span>
 </pre></div>
 </div>
@@ -895,7 +923,7 @@ Optimization terminated successfully.
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_GLM-robust-with-outlier-detection_36_0.png" src="../_images/notebooks_GLM-robust-with-outlier-detection_36_0.png" />
+<img alt="../_images/notebooks_GLM-robust-with-outlier-detection_38_0.png" src="../_images/notebooks_GLM-robust-with-outlier-detection_38_0.png" />
 </div>
 </div>
 <p><strong>NOTE:</strong></p>
@@ -914,16 +942,19 @@ samples under Metropolis-Hastings.</li>
 </ul>
 <hr class="docutils" />
 </div>
+</div>
 <hr class="docutils" />
 <div class="section" id="Declare-Outliers-and-Compare-Plots">
 <h2>Declare Outliers and Compare Plots<a class="headerlink" href="#Declare-Outliers-and-Compare-Plots" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="View-ranges-for-inliers-/-outlier-predictions">
+<h3>View ranges for inliers / outlier predictions<a class="headerlink" href="#View-ranges-for-inliers-/-outlier-predictions" title="Permalink to this headline">¶</a></h3>
 <p>At each step of the traces, each datapoint may be either an inlier or
 outlier. We hope that the datapoints spend an unequal time being one
 state or the other, so let&#8217;s take a look at the simple count of states
 for each of the 20 datapoints.</p>
-<div class="nbinput docutils container">
+<div class="nbinput nblast docutils container">
 <div class="prompt highlight-none"><div class="highlight"><pre>
-<span></span>In [19]:
+<span></span>In [ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3"><div class="highlight"><pre>
@@ -945,13 +976,6 @@ for each of the 20 datapoints.</p>
 </pre></div>
 </div>
 </div>
-<div class="nboutput nblast docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<img alt="../_images/notebooks_GLM-robust-with-outlier-detection_42_0.png" src="../_images/notebooks_GLM-robust-with-outlier-detection_42_0.png" />
-</div>
-</div>
 <p><strong>Observe</strong>:</p>
 <ul class="simple">
 <li>The plot above shows the number of samples in the traces in which
@@ -971,13 +995,16 @@ thereabouts.</li>
 for now, so let&#8217;s declare these 3 to be outliers and see how it looks
 compared to Jake Vanderplas&#8217; outliers, which were declared in a slightly
 different way as points with means above 0.68.</p>
+</div>
+<div class="section" id="Declare-outliers">
+<h3>Declare outliers<a class="headerlink" href="#Declare-outliers" title="Permalink to this headline">¶</a></h3>
 <p><strong>Note:</strong> + I will declare outliers to be datapoints that have value ==
 1 at the 5-percentile cutoff, i.e. in the percentiles from 5 up to 100,
 their values are 1. + Try for yourself altering cutoff to larger values,
 which leads to an objective ranking of outlier-hood.</p>
-<div class="nbinput docutils container">
+<div class="nbinput nblast docutils container">
 <div class="prompt highlight-none"><div class="highlight"><pre>
-<span></span>In [20]:
+<span></span>In [ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3"><div class="highlight"><pre>
@@ -987,23 +1014,12 @@ which leads to an objective ranking of outlier-hood.</p>
 </pre></div>
 </div>
 </div>
-<div class="nboutput nblast docutils container">
-<div class="prompt highlight-none"><div class="highlight"><pre>
-<span></span>Out[20]:
-</pre></div>
-</div>
-<div class="output_area highlight-none"><div class="highlight"><pre>
-<span></span>0    17
-1     3
-Name: outlier, dtype: int64
-</pre></div>
-</div>
 </div>
 <div class="section" id="Posterior-Prediction-Plots-for-OLS-vs-StudentT-vs-SignalNoise">
 <h3>Posterior Prediction Plots for OLS vs StudentT vs SignalNoise<a class="headerlink" href="#Posterior-Prediction-Plots-for-OLS-vs-StudentT-vs-SignalNoise" title="Permalink to this headline">¶</a></h3>
-<div class="nbinput docutils container">
+<div class="nbinput nblast docutils container">
 <div class="prompt highlight-none"><div class="highlight"><pre>
-<span></span>In [21]:
+<span></span>In [ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3"><div class="highlight"><pre>
@@ -1029,13 +1045,6 @@ Name: outlier, dtype: int64
 <span class="n">_</span> <span class="o">=</span> <span class="n">g</span><span class="o">.</span><span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="n">ylims</span><span class="p">)</span>
 <span class="n">_</span> <span class="o">=</span> <span class="n">g</span><span class="o">.</span><span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="n">xlims</span><span class="p">)</span>
 </pre></div>
-</div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<img alt="../_images/notebooks_GLM-robust-with-outlier-detection_47_0.png" src="../_images/notebooks_GLM-robust-with-outlier-detection_47_0.png" />
 </div>
 </div>
 <p><strong>Observe</strong>:</p>
