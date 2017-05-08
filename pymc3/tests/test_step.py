@@ -163,7 +163,9 @@ class TestStepMethods(object):  # yield test doesn't work subclassing object
                                          n_jobs=1, progressbar=False,
                                          homepath=self.temp_dir)
             else:
-                trace = sample(n_steps, step=step_method(), random_seed=1)
+                trace = sample(0, tune=n_steps,
+                               discard_tuned_samples=False,
+                               step=step_method(), random_seed=1)
 
         print(repr(trace.get_values('x')))
         assert_array_almost_equal(
@@ -195,7 +197,9 @@ class TestStepMethods(object):  # yield test doesn't work subclassing object
                     HamiltonianMC(scaling=C, is_cov=True, blocked=False)]),
             )
         for step in steps:
-            trace = sample(8000, step=step, start=start, model=model, random_seed=1)
+            trace = sample(0, tune=8000,
+                           discard_tuned_samples=False, step=step,
+                           start=start, model=model, random_seed=1)
             yield self.check_stat, check, trace, step.__class__.__name__
 
     def test_step_discrete(self):
@@ -210,7 +214,7 @@ class TestStepMethods(object):  # yield test doesn't work subclassing object
                 Metropolis(S=C, proposal_dist=MultivariateNormalProposal),
             )
         for step in steps:
-            trace = sample(20000, step=step, start=start, model=model, random_seed=1)
+            trace = sample(20000, tune=0, step=step, start=start, model=model, random_seed=1)
             yield self.check_stat, check, trace, step.__class__.__name__
 
     def test_step_categorical(self):
@@ -224,7 +228,7 @@ class TestStepMethods(object):  # yield test doesn't work subclassing object
                 CategoricalGibbsMetropolis(model.x, proposal='proportional'),
             )
         for step in steps:
-            trace = sample(8000, step=step, start=start, model=model, random_seed=1)
+            trace = sample(8000, tune=0, step=step, start=start, model=model, random_seed=1)
             yield self.check_stat, check, trace, step.__class__.__name__
 
     def test_step_elliptical_slice(self):
@@ -238,7 +242,7 @@ class TestStepMethods(object):  # yield test doesn't work subclassing object
                 EllipticalSlice(prior_chol=L),
             )
         for step in steps:
-            trace = sample(5000, step=step, start=start, model=model, random_seed=1)
+            trace = sample(5000, tune=0, step=step, start=start, model=model, random_seed=1)
             yield self.check_stat, check, trace, step.__class__.__name__
 
 
